@@ -68,6 +68,7 @@ if (inBrowser && !isIE) {
 /**
  * Flush both queues and run the watchers.
  */
+// 4. 当我们刷新的时候，flushSchedulerQueue会将队列进行排序
 function flushSchedulerQueue () {
   currentFlushTimestamp = getNow()
   flushing = true
@@ -85,13 +86,17 @@ function flushSchedulerQueue () {
 
   // do not cache length because more watchers might be pushed
   // as we run existing watchers
+
+  // 5.遍历所有的watcher实例
   for (index = 0; index < queue.length; index++) {
     watcher = queue[index]
+    // 7.watcher里面会有一些before钩子去执行
     if (watcher.before) {
       watcher.before()
     }
     id = watcher.id
     has[id] = null
+    // 6.真正的更新方法是run方法
     watcher.run()
     // in dev build, check and stop circular updates.
     if (process.env.NODE_ENV !== 'production' && has[id] != null) {
@@ -162,7 +167,10 @@ function callActivatedHooks (queue) {
  * pushed when the queue is being flushed.
  */
 export function queueWatcher (watcher: Watcher) {
+  // 1. 获取watcher唯一的id
+
   const id = watcher.id
+  // 2. 去重、判断是否已入队
   if (has[id] == null) {
     has[id] = true
     if (!flushing) {
@@ -184,6 +192,7 @@ export function queueWatcher (watcher: Watcher) {
         flushSchedulerQueue()
         return
       }
+      // 3.下一次异步更新的时候去异步刷新队列
       nextTick(flushSchedulerQueue)
     }
   }

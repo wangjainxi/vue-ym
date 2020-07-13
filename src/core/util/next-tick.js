@@ -9,7 +9,7 @@ export let isUsingMicroTask = false
 
 const callbacks = []
 let pending = false
-
+// 11. 存储用户传入的回调，遍历执行
 function flushCallbacks () {
   pending = false
   const copies = callbacks.slice(0)
@@ -39,10 +39,16 @@ let timerFunc
 // completely stops working after triggering a few times... so, if native
 // Promise is available, we will use it:
 /* istanbul ignore next, $flow-disable-line */
+
+// 5. 判断当前环境是否支持promise,异步首选是promise，因为微任务方式比较高效
+// 5.1 因为浏览器会等当前所有的微任务执行完刷新一下页面
 if (typeof Promise !== 'undefined' && isNative(Promise)) {
+    // 6. Promise.resolve()得到一个promise 实例
   const p = Promise.resolve()
   timerFunc = () => {
+      // 7. flushCallbacks直接将其排队，用异步的方式执行刷新回调函数
     p.then(flushCallbacks)
+
     // In problematic UIWebViews, Promise.then doesn't completely break, but
     // it can get stuck in a weird state where callbacks are pushed into the
     // microtask queue but the queue isn't being flushed, until the browser
@@ -51,6 +57,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
     if (isIOS) setTimeout(noop)
   }
   isUsingMicroTask = true
+  // 8. 不支持会回退到MutationObserver
 } else if (!isIE && typeof MutationObserver !== 'undefined' && (
   isNative(MutationObserver) ||
   // PhantomJS and iOS 7.x
@@ -70,6 +77,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
     textNode.data = String(counter)
   }
   isUsingMicroTask = true
+    // 9. 不支持MutationObserver 会回退到setImmediate
 } else if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
   // Fallback to setImmediate.
   // Technically it leverages the (macro) task queue,
@@ -79,16 +87,19 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
   }
 } else {
   // Fallback to setTimeout.
+    // 10. 最后使用setTimeout，
   timerFunc = () => {
     setTimeout(flushCallbacks, 0)
   }
 }
 
+// 1.此处nextTick 就是 Vue.nextTick()
 export function nextTick (cb?: Function, ctx?: Object) {
   let _resolve
   callbacks.push(() => {
     if (cb) {
       try {
+        // 2. 调用传入的回调
         cb.call(ctx)
       } catch (e) {
         handleError(e, ctx, 'nextTick')
@@ -99,6 +110,8 @@ export function nextTick (cb?: Function, ctx?: Object) {
   })
   if (!pending) {
     pending = true
+    // 3. 如果当前没有挂起函数，异步执行timerFunc()
+    // 4.timerFunc()是真正启动刷新callbacks
     timerFunc()
   }
   // $flow-disable-line

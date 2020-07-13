@@ -64,11 +64,15 @@ export function lifecycleMixin (Vue: Class<Component>) {
     vm._vnode = vnode
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
+    // 1._update 创建和更新， __patch__ vdom => dom
+    // 2. prevVnode 上一次vdom；初始化prevVnode 为null
     if (!prevVnode) {
       // initial render
+      // 3. 将vnode 这棵树直接创建，追加到宿主元素上，
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
     } else {
       // updates
+      // 4. 比对新旧vdom, diff 算法,更新$el
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
     restoreActiveInstance()
@@ -86,14 +90,18 @@ export function lifecycleMixin (Vue: Class<Component>) {
     // updated hook is called by the scheduler to ensure that children are
     // updated in a parent's updated hook.
   }
-
+  // 5.实现生命周期方法：
+  // 5.1 _update()、$destroy、$forceUpdate
+  // 5.2forceUpdate将组件里的watcher全部更新
   Vue.prototype.$forceUpdate = function () {
     const vm: Component = this
     if (vm._watcher) {
       vm._watcher.update()
     }
   }
-
+  // 5.3 $destroy 将里面的事件监听取消
+  // 5.4 watcher => watcher.teardown()
+  // 5.5 监听移除vm.$off() 避免内存泄漏
   Vue.prototype.$destroy = function () {
     const vm: Component = this
     if (vm._isBeingDestroyed) {
@@ -137,7 +145,7 @@ export function lifecycleMixin (Vue: Class<Component>) {
     }
   }
 }
-
+// 1. 执行挂载的时候最终执行的是mountComponent
 export function mountComponent (
   vm: Component,
   el: ?Element,
@@ -186,6 +194,7 @@ export function mountComponent (
       measure(`vue ${name} patch`, startTag, endTag)
     }
   } else {
+    // 2. 先渲染再更新
     updateComponent = () => {
       vm._update(vm._render(), hydrating)
     }
@@ -194,6 +203,16 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  // 声明一个组件，创建一个watcher实例，Vue2一个组件，一个watcher，降低了watcher的粒度
+  // 组件里面值发生变化，如何知道哪里发生改变？
+  // wacher发生变化，watcher 里面的get方法，会调用updateComponent 会让updateComponent去执行
+  // updateComponent执行，实际执行   vm._update(vm._render(), hydrating),会导致当前组件重新render
+  // 3. 将updateComponent作为Watcher 构造函数的第二个参数直接传进来了
+  // 4. 执行的getter就是updateComponent
+  // 5. 小秘书Wacher当我们通知它做事情的时候，
+  // 6. 就是执行updateComponent，会让当前组件的实例重新渲染，重新更新
+  // 7. 得到当前的vdom，再将vdom转换成真实dom
+  // 8.    vm._update(vm._render(), hydrating)
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted && !vm._isDestroyed) {

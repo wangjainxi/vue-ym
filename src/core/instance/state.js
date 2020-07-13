@@ -48,6 +48,8 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
+  // 1.属性的初始化initProps
+  // 2.方法的初始化initMethods
   if (opts.props) initProps(vm, opts.props)
   if (opts.methods) initMethods(vm, opts.methods)
   if (opts.data) {
@@ -55,7 +57,9 @@ export function initState (vm: Component) {
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
+  // 3.计算属性initComputed
   if (opts.computed) initComputed(vm, opts.computed)
+  // 4.监听初始化initWatch
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }

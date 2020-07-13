@@ -77,6 +77,7 @@ export default class Watcher {
       : ''
     // parse expression for getter
     if (typeof expOrFn === 'function') {
+      // 8. expression解析出来会最终传递给getter
       this.getter = expOrFn
     } else {
       this.getter = parsePath(expOrFn)
@@ -103,6 +104,9 @@ export default class Watcher {
     let value
     const vm = this.vm
     try {
+      // 6.get()其实就是getter()方法的调用
+      // 存在疑问 7. getter 就是平时使用watcher传入进来的第二个参数expression（不是有getter参数吗）
+    // 9. getter执行的时候，this.getter.call(vm, vm)就是执行的updateComponent,组件就更新了
       value = this.getter.call(vm, vm)
     } catch (e) {
       if (this.user) {
@@ -165,6 +169,7 @@ export default class Watcher {
     /* istanbul ignore else */
     if (this.lazy) {
       this.dirty = true
+      // 4. 设置了sync 方法就不排队了，直接执行run方法
     } else if (this.sync) {
       this.run()
     } else {
@@ -178,6 +183,7 @@ export default class Watcher {
    */
   run () {
     if (this.active) {
+      // 5.会执行get()
       const value = this.get()
       if (
         value !== this.value ||

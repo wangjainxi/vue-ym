@@ -29,16 +29,19 @@ Vue.config.isUnknownElement = isUnknownElement
 // install platform runtime directives & components
 extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
-
+// 1. web平台运行时首页执行的核心功能
 // install platform patch function
+// 2.安装平台的一个补丁函数，主要用于初始化和更新,diff最终过程就是由__patch__ 执行的
 Vue.prototype.__patch__ = inBrowser ? patch : noop
 
 // public mount method
+// 3.实现了$mount方法
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
   el = el && inBrowser ? query(el) : undefined
+  // 4.$mount方法做的事情： 执行组件挂载mountComponent vdom -> dom
   return mountComponent(this, el, hydrating)
 }
 
